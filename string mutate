@@ -1,0 +1,27 @@
+
+sample input:
+
+abracadabra
+5 k
+
+output:
+
+abrackdabra
+
+def mutate_string(string, position, character):
+    old_string=string
+    new_list =list(old_string)
+    new_list[position]=character
+    new_list=''.join(new_list)
+    return new_list
+    
+    #usually we can not mutate a string, there are two approaches for this method.
+    #convert the string to a list, then change the character by index.  after that
+    #  ''.join(list) will convert the list back to the string
+    
+    #Another approach is to slice the string and join it back.
+    
+    
+string = string[:5] + "k" + string[6:]
+print string
+abrackdabra
