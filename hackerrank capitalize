@@ -1,0 +1,7 @@
+
+###### this is for Python3 syntax
+###### passed all the test cases
+def solve(s):
+    l=[]
+    l=' '.join(word.capitalize() for word in s.split(' '))
+    return(l)
