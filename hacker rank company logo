@@ -1,0 +1,78 @@
+Input Format
+
+A single line of input containing the string .
+
+Constraints
+
+Output Format
+
+Print the three most common characters along with their occurrence count each on a separate line. 
+Sort output in descending order of occurrence count. 
+If the occurrence count is the same, sort the characters in alphabetical order.
+
+Sample Input 0
+
+aabbbccde
+Sample Output 0
+
+b 3
+a 2
+c 2
+Explanation 0
+
+
+Here, b occurs  times. It is printed first.
+Both a and c occur  times. So, a is printed in the second line and c in the third line because a comes before c in the alphabet.
+
+Note: The string  has at least  distinct characters.
+
+solution 1:
+#use sorted function
+#first use Counter to get how many times for each character, sort them by alphbet order first.
+#then use another sort function to sort their value, itemgetter(1), reverse =True : descending order.
+
+import math
+import os
+import random
+import re
+import sys
+
+
+
+if __name__ == '__main__':
+    s = input()
+    from collections import Counter
+    from operator import itemgetter
+    result=Counter(s)
+    for item in (sorted(sorted(result.items()),key = itemgetter(1),reverse=True)[:3]):
+        print (item[0], item[1])
+        
+        
+        
+ solution 2:
+ 
+ STEP 1: Create a list, letters, of size . Initialize each element to .
+
+STEP 2: Traverse through the input string . If a character in the string is 'a', then increment letter by . If 'b' is found, then increment letter by  and so on.
+
+STEP 3: Now run a loop three times. Inside the loop, store the maximum value of letters in the variable max_letter.
+
+STEP 4:. In the scope of the previous loop, run another loop and find the index of the first occurrence of max_letter. Now, print the appropriate letter associated with that index and the max_letter.
+ 
+ 
+ 
+ S = raw_input()
+letters = [0]*26
+
+for letter in S:
+    letters[ord(letter)-ord('a')] += 1
+
+for _ in range(3):
+    
+    max_letter = max(letters)
+    
+    for index in range(26):
+        if max_letter == letters[index]:
+            print chr(ord('a')+index), max_letter
+            letters[index] = -1
+            break
