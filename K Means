@@ -80,6 +80,8 @@ def recolor_image(input_file, k=5):
     
     
 recolor_image("C:/Users/xiguo/screen.png",k=5)
+recolor_image("C:/Users/xiguo/screen.png",k=10)
+recolor_image("C:/Users/xiguo/screen.png",k=3)
 #recolor_image("C:/Users/xiguo/screen.png",k=20)
 
 
