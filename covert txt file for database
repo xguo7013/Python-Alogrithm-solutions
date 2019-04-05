@@ -1,0 +1,20 @@
+# this is  take the input as memberid  and convert them into 'memberid', which can be used for sql insert int clause
+
+
+f=open("fle path",'r')
+file2=open("new file path",'w')
+count=0
+j=str()
+for i in f.readlines()[:-1]:
+    count =count +1
+    j=j+ "'" +i.strip()+"'"+','
+    if count >2:
+        j=j+'\n'
+        count=0
+file2.writelines(j)
+f=open("file path",'r')
+for i in f.readlines()[-1:]:
+    l="'" +i.strip()+"'"
+    file2.writelines(l)
+f.close()
+file2.close()
