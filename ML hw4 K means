@@ -1,0 +1,154 @@
+import numpy as np
+import pandas as pd
+import csv
+import matplotlib.pylab as plt
+import sys
+
+def read_file(filename):
+    data = []
+    with open(filename) as file:
+        content = csv.reader(file)
+        for c in content:
+            data.append(c)
+    return np.matrix(data).astype(np.float32)
+
+#############################
+#### PART A - KMEANS
+#############################
+class kmeans_gaussian(object):
+    
+    def __init__(self, ntrain, mix_weights):
+        self.ntrain = ntrain
+        self.mix_weights = mix_weights
+        self.generate_data()
+    
+    def generate_data(self):
+        cov = np.matrix([[1,0],[0,1]])
+        mean1 = np.array([0,0])
+        mean2 = np.array([3,0])
+        mean3 = np.array([0,3])
+        gauss1 = np.random.multivariate_normal(mean1,cov,self.ntrain)
+        gauss2 = np.random.multivariate_normal(mean2,cov,self.ntrain)
+        gauss3 = np.random.multivariate_normal(mean3,cov,self.ntrain)
+        # print(gauss1.shape,gauss2.shape,gauss3.shape)
+
+        #generate random draws:
+        choice = np.random.choice(range(3), 
+                                  size=500, p=self.mix_weights)
+        # print(choice)
+        self.data = np.concatenate(( gauss1[choice==0,:],
+                                     gauss2[choice==1,:],
+                                     gauss3[choice==2,:] ))
+
+        # print(gauss1[:4,:])
+        # print(gauss2[:4,:])
+        # print(gauss3[:4,:])
+        # print(self.data.shape)
+
+    def set_k(self,k):
+        self.k=k
+
+    def initialize_cluster_centers(self):
+        self.centers = np.random.uniform(low=0,high=1,size=(self.k,2))
+        self.objective = []
+        # print(self.centers)
+
+    def get_closest_cluster(self, row):
+        # print(self.centers - row)
+        # print((self.centers - row)**2)
+        # print(np.argmin(np.sum((self.centers - row)**2,axis=1)))
+        errors = np.sum((self.centers - row)**2,axis=1)
+        sel = np.argmin(errors)
+        return (sel,errors[sel])
+
+    def train(self, T):
+        # print(self.centers)
+        # print(self.data[:2])
+        for t in range(T):
+            self.cluster_assgn = np.apply_along_axis(self.get_closest_cluster,
+                                                  1,self.data)
+            # print(cluster_assgn)
+            self.objective.append(np.sum(self.cluster_assgn[:,1]))
+
+            #update centers:
+            for i in range(self.k):
+                self.centers[i,:] = np.mean(self.data[self.cluster_assgn[:,0]==i],axis=0)
+
+
+def line_plot(x,y1,y2,xticks,xlabel,ylabel,title,savfigname,leg=None):
+    plt.figure()
+    plt.plot(x,y1,'b')
+
+    if y2 is not None:
+        plt.plot(x,y2,'g')
+        plt.legend(leg)
+    plt.xticks(xticks)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.savefig(savfigname)
+    plt.show()
+
+def kmeans():
+
+    T=20
+    n_train = 500
+    mix_weights = (0.2,0.5,0.3)
+
+    #create a class object:
+    km = kmeans_gaussian(n_train,mix_weights)
+
+    # set k-values
+    kvalues = range(2,6)
+    colors = ['blue','green','red','black','yellow']
+
+    #store the cluster assignments:
+    k_backup = [3,5]
+    cluster_assgn35 = []
+
+    plt.figure()
+    for i in range(len(kvalues)):
+        km.set_k(kvalues[i])
+        km.initialize_cluster_centers()
+        km.train(T)
+
+        plt.plot(range(1,T+1),km.objective,colors[i])
+
+        #store cluster assignments for k=3,5
+        if kvalues[i] in k_backup:
+            cluster_assgn35.append(km.cluster_assgn[:,0])
+
+    plt.xticks(range(1,T+1))
+    plt.xlabel('Iterations')
+    plt.ylabel('Objective')
+    plt.title('Objective vs Iteration for K = [2,3,4,5]')
+    plt.legend(['K = %d'%i for i in kvalues])
+    # plt.savefig('hw4_1a_kmean_obj')
+    plt.show()
+
+    #plot part b:
+    for i in range(2):
+        plt.figure()
+        colors_arr = [colors[int(x)] for x in cluster_assgn35[i]]
+        plt.scatter(km.data[:,0],km.data[:,1],c=colors_arr)
+        plt.xlabel('Dimension 1')
+        plt.ylabel('Dimension 2')
+        plt.title('Scatter plot with cluster assignment for K=%d'%k_backup[i])
+        plt.savefig('hw4_2_k%d.png'%k_backup[i])
+        plt.show()
+        
+        
+  kmeans()
+  
+#another way to generate the data points  
+  
+from collections import Counter
+
+mix_weights = (0.2,0.5,0.3)
+
+choice = np.random.choice(range(3), 
+                                  size=500, p=mix_weights)
+
+n_1=Counter(choice)[0]
+n_2=Counter(choice)[1]
+n_3=Counter(choice)[2]
