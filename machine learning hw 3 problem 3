@@ -180,10 +180,10 @@ class matrix_factorization(object):
 
 #def mfact(train_file, test_file, movie_map):
 
-    mf = matrix_factorization("Prob3_ratings.csv","Prob3_ratings_test.csv","Prob3_movies.txt")
-    print(mf)
-    mf.find_map()
-    #print(mf.R)
+mf = matrix_factorization("Prob3_ratings.csv","Prob3_ratings_test.csv","Prob3_movies.txt")
+print(mf)
+mf.find_map()
+#print(mf.R)
 
 #train_file, test_file, movie_map
 # def main():
