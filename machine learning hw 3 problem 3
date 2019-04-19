@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[10]:
+
+
 import numpy as np
 import pandas as pd
 import csv
@@ -5,22 +11,60 @@ import matplotlib.pylab as plt
 import sys
 
 
-class matrix_factorization(object):
+# In[34]:
 
-    def __init__(self, train_file, test_file, metadata_file,
-                 nusers=943, nmovies=1682,
-                 var=0.25, d=10, lmb=1):
-        self.nusers = nusers
-        self.nmovies = nmovies
+
+file=open("Prob3_movies.txt",'r')
+
+
+# In[42]:
+
+
+file=open("Prob3_movies.txt",'r')
+movie=[]
+for x in file.readlines():
+    count +=1
+    movie.append(x)
+    
+
+
+# In[44]:
+
+
+count
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[49]:
+
+
+class MF(object):
+    count=1682
+    num_users=943
+
+    def __init__(self, train_set, test_set, movie_file,num_users=943, num_movies=1682,var=0.25, d=10, lmb=1):
+        self.num_users = num_users
+        self.num_movies = num_movies
 
         self.var = var
         self.d = int(d)
         self.lmb= int(lmb)
 
-        self.load_data(train_file, test_file)
-        self.load_metadata(metadata_file)
+        self.read_dataset(train_set, test_set)
+        self.load_movie(movie_file)
 
-    def load_metadata(self,file):
+    def load_movie(self,file):
         with open(file) as f:
             self.movies = np.array([x.rstrip('\n') for x in f.readlines()])
         # print(self.movies.shape)
@@ -29,7 +73,8 @@ class matrix_factorization(object):
 
     def create_matrix_from_file(self,file,train=False,test=False):
         #declare M:
-        matrix = np.repeat(np.nan,self.nusers*self.nmovies).reshape(self.nusers, self.nmovies)
+        
+        matrix = np.repeat(np.nan,self.num_users*self.num_movies).reshape(self.num_users, self.num_movies)
         # print(self.M.shape)
 
         #load info into it:
@@ -44,20 +89,20 @@ class matrix_factorization(object):
                     self.num_test_cases+=1
         return matrix
 
-    def load_data(self,train_file, test_file):
+    def read_dataset(self,train_set, test_set):
         
         self.num_train_cases = 0
         self.num_test_cases = 0
 
-        self.M = self.create_matrix_from_file(train_file, train=True)
-        self.Mtest = self.create_matrix_from_file(test_file, test=True)        
+        self.M = self.create_matrix_from_file(train_set, train=True)
+        self.Mtest = self.create_matrix_from_file(test_set, test=True)        
         # print(self.M.shape, self.Mtest.shape)
 
-    def generate_data(self):
-        self.Q = np.repeat(np.nan,self.nusers*self.d).reshape(self.nusers, self.d)
+    def get_data(self):
+        self.Q = np.repeat(np.nan,self.num_users*self.d).reshape(self.num_users, self.d)
         self.R = np.random.multivariate_normal(np.repeat(0,self.d),
                                                np.identity(self.d)/self.lmb,
-                                               self.nmovies).T
+                                               self.num_movies).T
         # print(self.Q.shape, self.R.shape)
 
     def calc_error(self, matrix):
@@ -71,11 +116,11 @@ class matrix_factorization(object):
     def calc_sqsum(self,matrix):
         return (matrix**2).sum()
 
-    def run_algorithm(self):
+    def run_step(self):
 
         self.objective = []
         for p in range(100):
-            for i in range(self.nusers):
+            for i in range(self.num_users):
                 observed_ind = ~np.isnan(self.M[i,:])
                 # print(sum(observed_ind))
                 Ri = self.R[:,observed_ind]
@@ -84,7 +129,7 @@ class matrix_factorization(object):
                 self.Q[i,:] = np.linalg.inv( Ri.dot(Ri.T) + 
                                         self.lmb*self.var*np.identity(self.d)).dot(Ri.dot(Mi.T))
 
-            for j in range(self.nmovies):
+            for j in range(self.num_movies):
                 observed_ind = ~np.isnan(self.M[:,j])
                 # print(sum(observed_ind))
                 Qj = self.Q[observed_ind,:]
@@ -108,7 +153,7 @@ class matrix_factorization(object):
 
         #initialize table
         results = pd.DataFrame(index=range(num_runs),
-                               columns=['s.no.','objective','test_rmse'])
+                               columns=['s.no.','Object','RMSE'])
 
         #get predictions for required movies:
         self.query_movies = ["Star Wars", "My Fair Lady", "GoodFellas"]
@@ -123,15 +168,15 @@ class matrix_factorization(object):
 
         plt.figure()
         for i in range(num_runs):
-            self.generate_data()
+            self.get_data()
 
-            self.run_algorithm()
+            self.run_step()
 
             plt.plot(x_vals, self.objective, label='run_%d'%(i+1))
 
             #get objective:
-            results.loc[i,'objective'] = self.objective[-1]
-            results.loc[i,'test_rmse'] = np.sqrt(self.calc_error(self.Mtest)/self.num_test_cases)
+            results.loc[i,'Object'] = self.objective[-1]
+            results.loc[i,'RMSE'] = np.sqrt(self.calc_error(self.Mtest)/self.num_test_cases)
 
             #update movie pred if required:
             if self.objective[-1]>max_obj:
@@ -141,15 +186,15 @@ class matrix_factorization(object):
         plt.xticks([int(x) for x in np.linspace(2,100,10)])
         plt.xlabel('Iteration')
         plt.ylabel('Objective Function')
-        plt.title('Objective function for 10 runs')
+        plt.title('Training function for 10 runs')
         plt.legend(loc='best')
-        plt.savefig('hw4_2a_obj.png')
+        
         plt.show()
 
         #export objective:
-        results = results.sort_values(by='objective',axis=0,ascending=False)
+        results = results.sort_values(by='Object',axis=0,ascending=False)
         print(results)
-        results.to_csv('hw4_2a_obj_rmse.csv',index=False)
+        #results.to_csv('hw4_2a_obj_rmse.csv',index=False)
 
         #print query results
         print(self.movie_results)
@@ -161,7 +206,7 @@ class matrix_factorization(object):
     def update_query_results(self):
 
         for movie in self.query_movies:
-            movie_id = [i for i in range(self.nmovies) 
+            movie_id = [i for i in range(self.num_movies) 
                         if movie in self.movies[i]][0]
             # print(movie_id)
             distances = np.sqrt(((self.R - self.R[:,movie_id].reshape(-1,1))**2).sum(axis=0))
@@ -180,81 +225,86 @@ class matrix_factorization(object):
 
 #def mfact(train_file, test_file, movie_map):
 
-mf = matrix_factorization("Prob3_ratings.csv","Prob3_ratings_test.csv","Prob3_movies.txt")
+mf =MF("Prob3_ratings.csv","Prob3_ratings_test.csv","Prob3_movies.txt")
 print(mf)
 mf.find_map()
-#print(mf.R)
+# print(mf.R)
 
-#train_file, test_file, movie_map
-# def main():
-#     args = sys.argv
 
-#     #call naive bayes
-#     if 'kmeans' in args:
-#         kmeans()
+# In[ ]:
 
-#     if 'mf' in args:
-#         trainf = "data/Prob3_ratings.csv"
-#         testf = "data/Prob3_ratings_test.csv"
-#         mmap = "data/Prob3_movies.txt"
-#         mfact(trainf, testf, mmap)
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
 
 answer:
 
-  s.no. objective test_rmse
-6      7  -91061.2   1.12351
-5      6  -91066.4   1.13451
-9     10    -91096    1.0973
-8      9  -91100.7   1.09021
-0      1    -91137    1.0908
-1      2  -91141.6   1.19208
-4      5  -91155.4   1.10323
-7      8  -91168.5   1.09885
-3      4    -91309   1.09508
-2      3  -91429.8   1.15054
-                            Star Wars  \
-0     Empire Strikes Back, The (1980)   
-1      Raiders of the Lost Ark (1981)   
-2           Return of the Jedi (1983)   
-3               My Man Godfrey (1936)   
-4   Man Who Would Be King, The (1975)   
-5  Searching for Bobby Fischer (1993)   
-6                       Aliens (1986)   
-7                        Alien (1979)   
-8          Blues Brothers, The (1980)   
-9            L.A. Confidential (1997)   
+   s.no.   Object     RMSE
+0      1 -90961.8  1.11737
+4      5 -90998.3  1.13389
+2      3 -91061.2  1.08993
+5      6 -91073.1  1.14357
+9     10 -91139.1  1.10003
+3      4   -91181   1.1041
+7      8 -91238.2    1.133
+6      7 -91246.4  1.10479
+8      9 -91272.8  1.11583
+1      2 -91489.5  1.11972
+                                        Star Wars  \
+0                 Empire Strikes Back, The (1980)   
+1                  Raiders of the Lost Ark (1981)   
+2                       Return of the Jedi (1983)   
+3                      Usual Suspects, The (1995)   
+4       Indiana Jones and the Last Crusade (1989)   
+5  Manon of the Spring (Manon des sources) (1986)   
+6                       Back to the Future (1985)   
+7                                   Gandhi (1982)   
+8                              Prefontaine (1997)   
+9                Shawshank Redemption, The (1994)   
 
                                         My Fair Lady  \
 0                                Mary Poppins (1964)   
-1                                   My Family (1995)   
-2                       American in Paris, An (1951)   
-3                                 Shadowlands (1993)   
-4                         Sound of Music, The (1965)   
-5        Winnie the Pooh and the Blustery Day (1968)   
-6                          Gone with the Wind (1939)   
-7                       It Happened One Night (1934)   
-8                            Jungle Book, The (1994)   
-9  Return of Martin Guerre, The (Retour de Martin...   
+1                                     Sabrina (1954)   
+2                                        Emma (1996)   
+3                          Gone with the Wind (1939)   
+4  Return of Martin Guerre, The (Retour de Martin...   
+5                         Sound of Music, The (1965)   
+6                                    SubUrbia (1997)   
+7                                Little Women (1994)   
+8                         Room with a View, A (1986)   
+9                            Parent Trap, The (1961)   
 
                                GoodFellas  
-0                 Bonnie and Clyde (1967)  
-1                           Casino (1995)  
-2                Full Metal Jacket (1987)  
-3          Godfather: Part II, The (1974)  
-4  Good, The Bad and The Ugly, The (1966)  
-5                         Swingers (1996)  
-6                   Cool Hand Luke (1967)  
-7            2001: A Space Odyssey (1968)  
-8      People vs. Larry Flynt, The (1996)  
-9                   Godfather, The (1972)  
+0                Full Metal Jacket (1987)  
+1  Good, The Bad and The Ugly, The (1966)  
+2                           Casino (1995)  
+3      People vs. Larry Flynt, The (1996)  
+4                          Platoon (1986)  
+5                            Alien (1979)  
+6     Once Upon a Time in the West (1969)  
+7                   Apocalypse Now (1979)  
+8                     True Romance (1993)  
+9                   Cool Hand Luke (1967)  
    Star Wars  My Fair Lady  GoodFellas
-0   0.312248      0.756742    0.657458
-1   0.603655      0.882977    0.703533
-2   0.639407      0.901677    0.706866
-3   0.817459      0.918155    0.718671
-4   0.875140      0.986888    0.778050
-5   0.879320      1.009737    0.827704
-6   0.884257      1.018953    0.869655
-7   0.936437      1.066992    0.893826
-8   0.948960      1.069082    0.897441
-9   0.949951      1.079111    0.904553
+0   0.313692      0.789353    0.630612
+1   0.555792      0.987386    0.720748
+2   0.640276      0.996716    0.798156
+3   0.804306      1.013789    0.833993
+4   0.857635      1.020244    0.892925
+5   0.927454      1.039932    0.907277
+6   0.928463      1.042708    0.915274
+7   0.956584      1.044472    0.941107
+8   0.965090      1.083621    0.954426
+9   0.975334      1.088132    0.957903
